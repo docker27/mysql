@@ -7,7 +7,7 @@ password='Dev123@wind.COM';
 
 # init
 function _init() {
-	mkdir -p /opt/mysql/data/ /opt/mysql/log/
+	mkdir -p /opt/mysql/data/ /opt/mysql/log/ /opt/mysql/pid/ /opt/mysql/sock/
 #	rm -rf /opt/mysql/data/* /opt/mysql/log/*
 	chown -R mysql.mysql /opt/mysql
 }
@@ -27,13 +27,22 @@ function _install() {
 
 	mysql_is_install=`rpm -qa | grep mysql-community-server-5.7.27-1.el7.x86_64 |wc -l`
 	if [ ${mysql_is_install} == 0 ];then
-		tar -xvf /opt/install/${downloan_file_name}
+		tar -xvf /opt/install/${downloan_file_name} -C /opt/install/
 		yum -y install numactl
 		yum -y install libaio
 		rpm -ivh /opt/install/mysql-community-common-5.7.27-1.el7.x86_64.rpm 
 		rpm -ivh /opt/install/mysql-community-libs-5.7.27-1.el7.x86_64.rpm
 		rpm -ivh /opt/install/mysql-community-client-5.7.27-1.el7.x86_64.rpm
 		rpm -ivh /opt/install/mysql-community-server-5.7.27-1.el7.x86_64.rpm
+		echo 'mysql initialize and chmod mysql data dir'
+
+		mv /etc/my.cnf /etc/my.cnf.bak
+		cp /opt/install/my.cnf /etc/my.cnf
+
+		mysqld --initialize
+#        	chmod -R 777 /var/lib/mysql/*
+		chmod -R 777 /opt/mysql/
+		chown -R mysql:mysql /opt/mysql/
 	fi
 	echo "mysql install success !!!"
 }
@@ -42,13 +51,11 @@ function _install() {
 function _start() {
 	# start mysql
 	echo "start mysql ..."
-	mysqld --initialize
-	chmod -R 777 /var/lib/mysql/*
-
-	mv /etc/my.cnf /etc/my.cnf.bak
-	cp /opt/install/my.cnf /etc/my.cnf
+#	mysqld --initialize
+#	chmod -R 777 /var/lib/mysql/*
+#	mv /etc/my.cnf /etc/my.cnf.bak
+#	cp /opt/install/my.cnf /etc/my.cnf
 	su mysql -c "systemctl start mysqld"
-	sleep 3
 	echo "start mysql finish"	
 }
 
@@ -90,4 +97,4 @@ _install
 #_start
 #_changePwd
 #_initdb
-#_chkconfig
+_chkconfig
